@@ -1,0 +1,556 @@
+<!doctype html>
+<!--
+  OBS Font Bridge - font dock (debug mode)
+  Add in OBS: Docks -> Custom Browser Docks... and paste the "Dock URL" shown in the script settings.
+  Talks to OBS through obs-websocket v5 (built into OBS 28+).
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OBS Font Bridge</title>
+<style>
+:root{
+  --bg:#1f2129;--panel:#272a34;--field:#1a1c23;--line:#3a3e4b;--text:#e3e5ec;--muted:#9296a6;
+  --accent:#4f8cff;--hover:#30343f;--sel:#2c4c86;--ok:#3ecf74;--warn:#f0b43c;--bad:#ef5a5a;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font:12px/1.4 "Segoe UI","Yu Gothic UI","Malgun Gothic","Microsoft JhengHei UI",sans-serif;
+  display:flex;flex-direction:column;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+.bar{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--panel);border-bottom:1px solid var(--line)}
+.bar h1{font-size:12px;font-weight:600;margin:0;flex:1;letter-spacing:.02em}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--bad);flex:none}
+.dot.ok{background:var(--ok)}.dot.wait{background:var(--warn)}
+.ibtn{background:none;border:1px solid transparent;border-radius:4px;padding:2px 6px;cursor:pointer;color:var(--muted)}
+.ibtn:hover{background:var(--hover);color:var(--text)}
+.ibtn.on{background:var(--sel);color:#fff;border-color:var(--accent)}
+main{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+.sec{display:flex;flex-direction:column;gap:6px}
+.row{display:flex;align-items:center;gap:6px;min-width:0}
+.row>label{color:var(--muted);flex:none;min-width:64px}
+.grow{flex:1;min-width:0}
+input[type=text],input[type=number],input[type=password],select,textarea{
+  background:var(--field);border:1px solid var(--line);border-radius:4px;padding:4px 6px;min-width:0;outline:none}
+input:focus,select:focus,textarea:focus,.fonts:focus{border-color:var(--accent)}
+input[type=number]{width:64px}
+input[type=range]{accent-color:var(--accent);min-width:0}
+input[type=color]{width:30px;height:24px;padding:0;border:1px solid var(--line);border-radius:4px;background:none;cursor:pointer}
+input[type=checkbox]{accent-color:var(--accent)}
+textarea{resize:vertical;min-height:70px;width:100%}
+.btn{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:4px 10px;cursor:pointer}
+.btn:hover{background:var(--hover)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.seg{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seg button{background:var(--field);border:0;border-right:1px solid var(--line);padding:3px 9px;cursor:pointer;color:var(--muted)}
+.seg button:last-child{border-right:0}
+.seg button:hover{background:var(--hover);color:var(--text)}
+.seg button.on{background:var(--sel);color:#fff}
+.conn{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px}
+.msg{color:var(--warn);font-size:11px}
+.fonts{background:var(--field);border:1px solid var(--line);border-radius:4px;height:240px;min-height:80px;overflow:auto;resize:vertical;outline:none}
+.font{display:flex;flex-direction:column;padding:3px 8px 2px;cursor:pointer;border-bottom:1px solid #23252d;
+  content-visibility:auto;contain-intrinsic-size:auto 50px}
+.font:hover{background:var(--hover)}
+.font.sel{background:var(--sel)}
+.font .fname{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.font.sel .fname{color:#fff}
+.font img{display:block;width:150px;height:20px;mix-blend-mode:screen;image-rendering:auto}
+.font .fb{display:none;font-size:15px;white-space:nowrap;overflow:hidden;height:20px}
+.font.missing img{display:none}.font.missing .fb{display:block}
+.hdr{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.hdr::after{content:"";flex:1;height:1px;background:var(--line)}
+footer{padding:4px 8px;border-top:1px solid var(--line);color:var(--muted);font-size:10px;display:flex;gap:8px;flex-wrap:wrap}
+footer .grow{text-align:right}
+.overlay{position:fixed;inset:0;background:rgba(20,21,27,.94);display:none;align-items:center;justify-content:center;padding:24px;text-align:center;color:var(--muted);z-index:9}
+.overlay.show{display:flex}
+.hidden{display:none!important}
+.disabled{opacity:.45;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="bar">
+  <span class="dot" id="dot"></span>
+  <h1>OBS Font Bridge</h1>
+  <span id="status" style="color:var(--muted);font-size:11px"></span>
+  <button class="ibtn" id="gear" title="">⚙</button>
+</div>
+
+<main>
+  <div class="conn sec hidden" id="conn">
+    <div class="row"><label data-i18n="host">Host</label><input type="text" id="host" class="grow" value="localhost"></div>
+    <div class="row"><label data-i18n="port">Port</label><input type="number" id="port" value="4455" min="1" max="65535" style="width:90px"></div>
+    <div class="row"><label data-i18n="password">Password</label><input type="password" id="pass" class="grow"></div>
+    <div class="row"><span class="grow msg" id="connMsg"></span><button class="btn primary" id="connectBtn" data-i18n="connect">Connect</button></div>
+  </div>
+
+  <div class="sec" id="editor">
+    <div class="row">
+      <label data-i18n="source">Source</label>
+      <select id="source" class="grow"></select>
+      <button class="ibtn" id="reloadSrc" title="">⟳</button>
+    </div>
+
+    <div class="hdr" data-i18n="font">Font</div>
+    <div class="row">
+      <input type="text" id="search" class="grow" data-i18n-ph="search">
+    </div>
+    <div class="fonts" id="fonts" tabindex="0"></div>
+    <div class="row" style="color:var(--muted);font-size:11px"><span id="fontInfo" class="grow"></span></div>
+
+    <div class="row">
+      <div class="seg" id="styles">
+        <button data-f="1" data-i18n-title="bold"><b>B</b></button>
+        <button data-f="2" data-i18n-title="italic"><i>I</i></button>
+        <button data-f="4" data-i18n-title="underline"><u>U</u></button>
+        <button data-f="8" data-i18n-title="strikeout"><s>S</s></button>
+      </div>
+      <span class="grow"></span>
+      <div class="seg" id="aligns">
+        <button data-v="left" data-i18n-title="align_left">⯇≡</button>
+        <button data-v="center" data-i18n-title="align_center">≡</button>
+        <button data-v="right" data-i18n-title="align_right">≡⯈</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <label data-i18n="size">Size</label>
+      <input type="range" id="sizeR" min="4" max="400" class="grow">
+      <input type="number" id="size" min="4" max="1024">
+    </div>
+    <div class="row">
+      <label data-i18n="color">Color</label>
+      <input type="color" id="color">
+      <input type="range" id="alpha" min="0" max="100" class="grow" data-i18n-title="opacity">
+      <span id="alphaV" style="width:34px;text-align:right;color:var(--muted)"></span>
+    </div>
+
+    <div class="row">
+      <label><input type="checkbox" id="outline"> <span data-i18n="outline">Outline</span></label>
+      <input type="range" id="olSizeR" min="1" max="40" class="grow">
+      <input type="number" id="olSize" min="1" max="40" style="width:52px">
+      <input type="color" id="olColor">
+    </div>
+
+    <div class="hdr" data-i18n="text">Text</div>
+    <textarea id="text" spellcheck="false"></textarea>
+  </div>
+</main>
+
+<footer>
+  <span id="progress"></span>
+  <span class="grow" id="meta"></span>
+</footer>
+
+<div class="overlay" id="overlay"><div id="overlayMsg"></div></div>
+
+<script>
+"use strict";
+const I18N = {
+  en:{host:"Host",port:"Port",password:"Password",connect:"Connect",disconnect:"Disconnect",
+    st_connected:"Connected",st_disconnected:"Not connected",st_connecting:"Connecting…",
+    auth_failed:"Authentication failed. Check the password.",
+    conn_failed:"Could not connect. Enable the WebSocket server in Tools → WebSocket Server Settings.",
+    connection:"Connection settings",source:"Source",reload:"Reload",no_sources:"No Text (Bridge) sources",font:"Font",
+    search:"Search fonts…",refresh_fonts:"Refresh font list",size:"Size",tracking:"Tracking",bold:"Bold",italic:"Italic",
+    underline:"Underline",strikeout:"Strikethrough",align_left:"Left",align_center:"Center",align_right:"Right",
+    color:"Color",opacity:"Opacity",outline:"Outline",quality:"Smoothing",q1:"Standard (1x)",q2:"High (2x)",q4:"Ultra (4x)",
+    text:"Text",fonts_n:"{n} fonts",previews:"Generating previews… {d}/{n}",
+    debug_off:"Debug Mode is OFF. Turn it on in Tools → Scripts → OBS Font Bridge."},
+  ja:{host:"ホスト",port:"ポート",password:"パスワード",connect:"接続",disconnect:"切断",
+    st_connected:"接続済み",st_disconnected:"未接続",st_connecting:"接続中…",
+    auth_failed:"認証に失敗しました。パスワードを確認してください。",
+    conn_failed:"接続できません。ツール → WebSocketサーバー設定 でサーバーを有効にしてください。",
+    connection:"接続設定",source:"ソース",reload:"再読み込み",no_sources:"テキスト (Bridge) のソースがありません",font:"フォント",
+    search:"フォントを検索…",refresh_fonts:"フォント一覧を更新",size:"サイズ",tracking:"トラッキング",bold:"太字",italic:"斜体",
+    underline:"下線",strikeout:"取り消し線",align_left:"左揃え",align_center:"中央揃え",align_right:"右揃え",
+    color:"カラー",opacity:"不透明度",outline:"縁取り",quality:"アンチエイリアス",q1:"標準 (1x)",q2:"高 (2x)",q4:"最高 (4x)",
+    text:"テキスト",fonts_n:"{n} 書体",previews:"プレビュー生成中… {d}/{n}",
+    debug_off:"デバッグモードがOFFです。ツール → スクリプト → OBS Font Bridge でONにしてください。"},
+  ko:{host:"호스트",port:"포트",password:"비밀번호",connect:"연결",disconnect:"연결 끊기",
+    st_connected:"연결됨",st_disconnected:"연결 안 됨",st_connecting:"연결 중…",
+    auth_failed:"인증에 실패했습니다. 비밀번호를 확인하세요.",
+    conn_failed:"연결할 수 없습니다. 도구 → WebSocket 서버 설정에서 서버를 활성화하세요.",
+    connection:"연결 설정",source:"소스",reload:"다시 불러오기",no_sources:"텍스트 (Bridge) 소스가 없습니다",font:"글꼴",
+    search:"글꼴 검색…",refresh_fonts:"글꼴 목록 새로 고침",size:"크기",tracking:"자간",bold:"굵게",italic:"기울임꼴",
+    underline:"밑줄",strikeout:"취소선",align_left:"왼쪽",align_center:"가운데",align_right:"오른쪽",
+    color:"색상",opacity:"불투명도",outline:"외곽선",quality:"안티앨리어싱",q1:"표준 (1x)",q2:"높음 (2x)",q4:"최고 (4x)",
+    text:"텍스트",fonts_n:"글꼴 {n}개",previews:"미리보기 생성 중… {d}/{n}",
+    debug_off:"디버그 모드가 꺼져 있습니다. 도구 → 스크립트 → OBS Font Bridge에서 켜세요."},
+  id:{host:"Host",port:"Port",password:"Kata sandi",connect:"Hubungkan",disconnect:"Putuskan",
+    st_connected:"Terhubung",st_disconnected:"Tidak terhubung",st_connecting:"Menghubungkan…",
+    auth_failed:"Autentikasi gagal. Periksa kata sandi.",
+    conn_failed:"Tidak dapat terhubung. Aktifkan server WebSocket di Alat → Pengaturan Server WebSocket.",
+    connection:"Pengaturan koneksi",source:"Sumber",reload:"Muat ulang",no_sources:"Tidak ada sumber Teks (Bridge)",font:"Font",
+    search:"Cari font…",refresh_fonts:"Muat ulang daftar font",size:"Ukuran",tracking:"Spasi huruf",bold:"Tebal",italic:"Miring",
+    underline:"Garis bawah",strikeout:"Coret",align_left:"Kiri",align_center:"Tengah",align_right:"Kanan",
+    color:"Warna",opacity:"Opasitas",outline:"Garis tepi",quality:"Penghalusan",q1:"Standar (1x)",q2:"Tinggi (2x)",q4:"Ultra (4x)",
+    text:"Teks",fonts_n:"{n} font",previews:"Membuat pratinjau… {d}/{n}",
+    debug_off:"Mode Debug MATI. Aktifkan di Alat → Skrip → OBS Font Bridge."},
+  fr:{host:"Hôte",port:"Port",password:"Mot de passe",connect:"Se connecter",disconnect:"Se déconnecter",
+    st_connected:"Connecté",st_disconnected:"Non connecté",st_connecting:"Connexion…",
+    auth_failed:"Échec de l'authentification. Vérifiez le mot de passe.",
+    conn_failed:"Connexion impossible. Activez le serveur WebSocket dans Outils → Paramètres du serveur WebSocket.",
+    connection:"Paramètres de connexion",source:"Source",reload:"Recharger",no_sources:"Aucune source Texte (Bridge)",font:"Police",
+    search:"Rechercher une police…",refresh_fonts:"Actualiser la liste des polices",size:"Taille",tracking:"Approche",bold:"Gras",italic:"Italique",
+    underline:"Souligné",strikeout:"Barré",align_left:"Gauche",align_center:"Centre",align_right:"Droite",
+    color:"Couleur",opacity:"Opacité",outline:"Contour",quality:"Lissage",q1:"Standard (1x)",q2:"Élevée (2x)",q4:"Ultra (4x)",
+    text:"Texte",fonts_n:"{n} polices",previews:"Génération des aperçus… {d}/{n}",
+    debug_off:"Le mode débogage est désactivé. Activez-le dans Outils → Scripts → OBS Font Bridge."},
+  zh_TW:{host:"主機",port:"連接埠",password:"密碼",connect:"連線",disconnect:"中斷連線",
+    st_connected:"已連線",st_disconnected:"未連線",st_connecting:"連線中…",
+    auth_failed:"驗證失敗，請確認密碼。",
+    conn_failed:"無法連線。請在 工具 → WebSocket 伺服器設定 中啟用伺服器。",
+    connection:"連線設定",source:"來源",reload:"重新載入",no_sources:"沒有 文字 (Bridge) 來源",font:"字型",
+    search:"搜尋字型…",refresh_fonts:"重新整理字型清單",size:"大小",tracking:"字距",bold:"粗體",italic:"斜體",
+    underline:"底線",strikeout:"刪除線",align_left:"靠左",align_center:"置中",align_right:"靠右",
+    color:"顏色",opacity:"不透明度",outline:"外框",quality:"反鋸齒",q1:"標準 (1x)",q2:"高 (2x)",q4:"極高 (4x)",
+    text:"文字",fonts_n:"{n} 個字型",previews:"正在產生預覽… {d}/{n}",
+    debug_off:"偵錯模式為關閉。請在 工具 → 腳本 → OBS Font Bridge 中開啟。"},
+};
+const DATA_DIR = "obs_font_bridge_dock_data/";
+const SAMPLE = "Abg あア永 가 123";
+const $ = (id) => document.getElementById(id);
+
+let L = I18N.en, lang = "en";
+const t = (k, vars) => {
+  let s = L[k] ?? I18N.en[k] ?? k;
+  if (vars) for (const [a, b] of Object.entries(vars)) s = s.replace("{" + a + "}", b);
+  return s;
+};
+function applyI18n() {
+  document.documentElement.lang = lang.replace("_", "-");
+  document.querySelectorAll("[data-i18n]").forEach(el => el.textContent = t(el.dataset.i18n));
+  document.querySelectorAll("[data-i18n-ph]").forEach(el => el.placeholder = t(el.dataset.i18nPh));
+  document.querySelectorAll("[data-i18n-title]").forEach(el => el.title = t(el.dataset.i18nTitle));
+  $("gear").title = t("connection");
+  $("reloadSrc").title = t("reload");
+  renderStatus();
+  renderFontInfo();
+}
+
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("fb." + k); return v === null ? d : v; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("fb." + k, v); } catch {} },
+};
+
+/* ---------------------------------------------------------------- SHA-256 */
+function sha256js(bytes) {
+  const K = [], H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  for (let p = 2, n = 0; n < 64; p++) {
+    let prime = true;
+    for (let d = 2; d * d <= p; d++) if (p % d === 0) { prime = false; break; }
+    if (prime) K[n++] = (Math.pow(p, 1 / 3) * 4294967296) | 0;
+  }
+  const l = bytes.length, total = ((l + 9 + 63) >> 6) << 6;
+  const m = new Uint8Array(total); m.set(bytes); m[l] = 0x80;
+  const dv = new DataView(m.buffer);
+  dv.setUint32(total - 4, (l * 8) >>> 0); dv.setUint32(total - 8, Math.floor(l / 0x20000000));
+  const w = new Uint32Array(64), rotr = (x, n) => (x >>> n) | (x << (32 - n));
+  for (let i = 0; i < total; i += 64) {
+    for (let j = 0; j < 16; j++) w[j] = dv.getUint32(i + j * 4);
+    for (let j = 16; j < 64; j++) {
+      const s0 = rotr(w[j-15], 7) ^ rotr(w[j-15], 18) ^ (w[j-15] >>> 3);
+      const s1 = rotr(w[j-2], 17) ^ rotr(w[j-2], 19) ^ (w[j-2] >>> 10);
+      w[j] = (w[j-16] + s0 + w[j-7] + s1) | 0;
+    }
+    let [a, b, c, d, e, f, g, h] = H;
+    for (let j = 0; j < 64; j++) {
+      const t1 = (h + (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) + ((e & f) ^ (~e & g)) + K[j] + w[j]) | 0;
+      const t2 = ((rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+    H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+  }
+  const out = new Uint8Array(32), odv = new DataView(out.buffer);
+  H.forEach((v, i) => odv.setUint32(i * 4, v >>> 0));
+  return out;
+}
+async function sha256b64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let digest;
+  try { digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)); }
+  catch { digest = sha256js(bytes); }
+  return btoa(String.fromCharCode(...digest));
+}
+
+/* ---------------------------------------------------------- obs-websocket */
+const obs = {
+  ws: null, ready: false, reqId: 0, pending: new Map(), wanted: false,
+  connect(host, port, password) {
+    this.close();
+    this.wanted = true;
+    setStatus("wait");
+    return new Promise((resolve, reject) => {
+      let ws;
+      try { ws = new WebSocket(`ws://${host}:${port}`); } catch (e) { setStatus("bad"); return reject(e); }
+      this.ws = ws;
+      ws.onmessage = async (ev) => {
+        const msg = JSON.parse(ev.data);
+        if (msg.op === 0) {
+          const d = { rpcVersion: 1, eventSubscriptions: 1 << 3 /* Inputs */ };
+          const a = msg.d.authentication;
+          if (a) d.authentication = await sha256b64((await sha256b64(password + a.salt)) + a.challenge);
+          ws.send(JSON.stringify({ op: 1, d }));
+        } else if (msg.op === 2) {
+          this.ready = true; setStatus("ok"); resolve();
+        } else if (msg.op === 7) {
+          const p = this.pending.get(msg.d.requestId);
+          if (!p) return;
+          this.pending.delete(msg.d.requestId);
+          msg.d.requestStatus.result ? p.res(msg.d.responseData || {})
+            : p.rej(new Error(msg.d.requestStatus.comment || ("code " + msg.d.requestStatus.code)));
+        } else if (msg.op === 5) {
+          onObsEvent(msg.d.eventType, msg.d.eventData || {});
+        }
+      };
+      ws.onclose = (e) => {
+        if (this.ws !== ws) return; // closed on purpose: a newer connection may already be in place
+        const wasReady = this.ready;
+        this.ready = false; this.ws = null;
+        for (const p of this.pending.values()) p.rej(new Error("closed"));
+        this.pending.clear();
+        setStatus("bad", e.code === 4009 ? t("auth_failed") : (wasReady ? "" : t("conn_failed")));
+        reject(new Error("closed " + e.code));
+        if (this.wanted && e.code !== 4009) setTimeout(() => { if (this.wanted && !this.ws) autoConnect(); }, 5000);
+      };
+    });
+  },
+  close() {
+    this.wanted = false;
+    if (this.ws) { try { this.ws.close(); } catch {} }
+    this.ws = null; this.ready = false;
+    for (const p of this.pending.values()) p.rej(new Error("closed"));
+    this.pending.clear();
+  },
+  call(requestType, requestData = {}) {
+    if (!this.ready) return Promise.reject(new Error("not connected"));
+    const requestId = "r" + (++this.reqId);
+    return new Promise((res, rej) => {
+      this.pending.set(requestId, { res, rej });
+      this.ws.send(JSON.stringify({ op: 6, d: { requestType, requestId, requestData } }));
+    });
+  },
+};
+
+let statusKind = "bad", statusMsg = "";
+function setStatus(kind, msg = "") { statusKind = kind; statusMsg = msg; renderStatus(); }
+function renderStatus() {
+  $("dot").className = "dot " + (statusKind === "ok" ? "ok" : statusKind === "wait" ? "wait" : "");
+  $("status").textContent = t(statusKind === "ok" ? "st_connected" : statusKind === "wait" ? "st_connecting" : "st_disconnected");
+  $("connMsg").textContent = statusMsg;
+  $("connectBtn").textContent = statusKind === "ok" ? t("disconnect") : t("connect");
+  if (statusKind === "bad" && statusMsg) $("conn").classList.remove("hidden");
+  $("editor").classList.toggle("disabled", statusKind !== "ok");
+}
+
+function autoConnect() {
+  const host = $("host").value.trim() || "localhost", port = $("port").value || "4455";
+  obs.connect(host, port, $("pass").value).then(loadSources).catch(() => {});
+}
+
+/* ----------------------------------------------------------- dock state */
+let state = { enabled: false, sourceId: "fontbridge_text", fontsStamp: null, total: 0, done: 0 };
+let fontsStamp = null, lastDone = -1, fonts = [];
+
+function loadData(name) {
+  const s = document.createElement("script");
+  s.charset = "utf-8";
+  s.src = DATA_DIR + name + "?t=" + Date.now();
+  s.onload = s.onerror = () => s.remove();
+  document.head.appendChild(s);
+}
+window.fbState = (st) => {
+  state = st;
+  if (st.lang && st.lang !== lang) { lang = I18N[st.lang] ? st.lang : "en"; L = I18N[lang]; applyI18n(); }
+  $("overlayMsg").textContent = t("debug_off");
+  $("overlay").classList.toggle("show", !st.enabled);
+  $("meta").textContent = `${st.name} v${st.version} · ${st.buildDate} · ${st.author}`;
+  if (st.fontsStamp !== fontsStamp) { fontsStamp = st.fontsStamp; loadData("fonts.js"); }
+  $("progress").textContent = st.done < st.total ? t("previews", { d: st.done, n: st.total }) : "";
+  if (st.done !== lastDone) { lastDone = st.done; retryPreviews(); }
+};
+window.fbFonts = (list) => { fonts = list; buildFontList(); };
+function pollState() { loadData("state.js"); }
+
+/* ------------------------------------------------------------ font list */
+let rows = new Map(), selRow = null;
+function previewSrc(f) { return `${DATA_DIR}previews/${f.p}.bmp?v=${encodeURIComponent(fontsStamp)}-${lastDone}`; }
+function buildFontList() {
+  const box = $("fonts"), frag = document.createDocumentFragment();
+  rows = new Map(); selRow = null;
+  for (const f of fonts) {
+    const row = document.createElement("div");
+    row.className = "font"; row.dataset.name = f.n;
+    const nm = document.createElement("div"); nm.className = "fname"; nm.textContent = f.n;
+    const img = document.createElement("img"); img.loading = "lazy"; img.alt = ""; img.draggable = false;
+    img.onerror = () => row.classList.add("missing");
+    img.onload = () => row.classList.remove("missing");
+    img.src = previewSrc(f);
+    const fb = document.createElement("div"); fb.className = "fb"; fb.textContent = SAMPLE;
+    fb.style.fontFamily = `"${f.n.replace(/"/g, '\\"')}", sans-serif`;
+    row.append(nm, img, fb);
+    frag.appendChild(row);
+    rows.set(f.n, { row, img, f });
+  }
+  box.replaceChildren(frag);
+  filterFonts();
+  if (current.font) markFont(current.font.face, true);
+  renderFontInfo();
+}
+function retryPreviews() {
+  for (const { row, img, f } of rows.values()) if (row.classList.contains("missing")) img.src = previewSrc(f);
+}
+function renderFontInfo() { $("fontInfo").textContent = fonts.length ? t("fonts_n", { n: fonts.length }) : ""; }
+function filterFonts() {
+  const q = $("search").value.trim().toLowerCase();
+  for (const { row, f } of rows.values()) row.classList.toggle("hidden", !!q && !f.n.toLowerCase().includes(q));
+}
+function markFont(name, scroll) {
+  if (selRow) selRow.classList.remove("sel");
+  const r = rows.get(name);
+  selRow = r ? r.row : null;
+  if (selRow) { selRow.classList.add("sel"); if (scroll) selRow.scrollIntoView({ block: "nearest" }); }
+}
+$("fonts").addEventListener("click", (e) => {
+  const row = e.target.closest(".font");
+  if (!row) return;
+  markFont(row.dataset.name, false);
+  setFont({ face: row.dataset.name, style: "" });
+});
+$("fonts").addEventListener("keydown", (e) => {
+  if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+  e.preventDefault();
+  const visible = [...$("fonts").children].filter(r => !r.classList.contains("hidden"));
+  if (!visible.length) return;
+  let i = visible.indexOf(selRow);
+  i = i < 0 ? 0 : Math.max(0, Math.min(visible.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)));
+  markFont(visible[i].dataset.name, true);
+  setFont({ face: visible[i].dataset.name, style: "" });
+});
+$("search").addEventListener("input", filterFonts);
+
+/* --------------------------------------------------------------- source */
+let current = {}, defaults = null, sourceName = "";
+async function loadSources() {
+  const sel = $("source");
+  let inputs = [];
+  try { inputs = (await obs.call("GetInputList", { inputKind: state.sourceId })).inputs || []; } catch { return; }
+  const keep = sourceName || store.get("source", "");
+  sel.replaceChildren(...inputs.map(i => new Option(i.inputName, i.inputName)));
+  if (!inputs.length) sel.appendChild(new Option(t("no_sources"), ""));
+  const pick = inputs.find(i => i.inputName === keep) || inputs[0];
+  sel.value = pick ? pick.inputName : "";
+  await selectSource(sel.value);
+}
+async function selectSource(name) {
+  sourceName = name;
+  if (!name) return;
+  store.set("source", name);
+  try {
+    if (!defaults) defaults = (await obs.call("GetInputDefaultSettings", { inputKind: state.sourceId })).defaultInputSettings || {};
+    const s = (await obs.call("GetInputSettings", { inputName: name })).inputSettings || {};
+    current = { ...defaults, ...s, font: { ...(defaults.font || {}), ...(s.font || {}) } };
+    fillUi();
+  } catch {}
+}
+$("source").addEventListener("change", (e) => selectSource(e.target.value));
+$("reloadSrc").addEventListener("click", loadSources);
+function onObsEvent(type, d) {
+  if (type === "InputCreated" || type === "InputRemoved") loadSources();
+  else if (type === "InputNameChanged") {
+    if (d.oldInputName === sourceName) sourceName = d.inputName;
+    loadSources();
+  }
+}
+
+/* ----------------------------------------------------------- settings ui */
+const intToColor = (v) => {
+  v = (v ?? 0xFFFFFFFF) >>> 0;
+  const hex = [v & 255, (v >>> 8) & 255, (v >>> 16) & 255].map(x => x.toString(16).padStart(2, "0")).join("");
+  return { hex: "#" + hex, a: (v >>> 24) & 255 };
+};
+const colorToInt = (hex, a) => {
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  return ((a & 255) * 16777216) + (b << 16) + (g << 8) + r;
+};
+
+function fillUi() {
+  const c = current;
+  if (document.activeElement !== $("text")) $("text").value = c.text ?? "";
+  const f = c.font || {};
+  $("size").value = $("sizeR").value = f.size ?? 36;
+  $("color").value = intToColor(c.color).hex;
+  $("alpha").value = c.opacity ?? 100; $("alphaV").textContent = $("alpha").value + "%";
+  $("outline").checked = !!c.outline;
+  $("olSize").value = $("olSizeR").value = c.outline_size ?? 2;
+  $("olColor").value = intToColor(c.outline_color).hex;
+  document.querySelectorAll("#styles button").forEach(b => b.classList.toggle("on", ((f.flags || 0) & b.dataset.f) !== 0));
+  document.querySelectorAll("#aligns button").forEach(b => b.classList.toggle("on", (c.align || "left") === b.dataset.v));
+  markFont(f.face, true);
+}
+
+// Text (GDI+) keeps face / size / flags / style in one "font" object, so always send it whole.
+function setFont(patch) { apply({ font: { ...(current.font || {}), ...patch } }); }
+
+let pendingPatch = {}, patchTimer = 0;
+function apply(patch) {
+  Object.assign(current, patch);
+  Object.assign(pendingPatch, patch);
+  clearTimeout(patchTimer);
+  patchTimer = setTimeout(() => {
+    const inputSettings = pendingPatch; pendingPatch = {};
+    if (sourceName) obs.call("SetInputSettings", { inputName: sourceName, inputSettings, overlay: true }).catch(() => {});
+  }, 50);
+}
+
+function bindPair(rangeId, numId, send) {
+  const push = (v) => { $(rangeId).value = $(numId).value = v; send(parseInt(v, 10) || 0); };
+  $(rangeId).addEventListener("input", (e) => push(e.target.value));
+  $(numId).addEventListener("input", (e) => push(e.target.value));
+}
+bindPair("sizeR", "size", (v) => setFont({ size: v }));
+bindPair("olSizeR", "olSize", (v) => apply({ outline_size: v }));
+
+document.querySelectorAll("#styles button").forEach(b => b.addEventListener("click", () => {
+  const on = !b.classList.contains("on");
+  b.classList.toggle("on", on);
+  const flags = ((current.font || {}).flags || 0) & ~b.dataset.f;
+  setFont({ flags: on ? flags | b.dataset.f : flags });
+}));
+document.querySelectorAll("#aligns button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#aligns button").forEach(x => x.classList.toggle("on", x === b));
+  apply({ align: b.dataset.v });
+}));
+$("color").addEventListener("input", (e) => apply({ color: colorToInt(e.target.value, 255) }));
+$("alpha").addEventListener("input", (e) => {
+  $("alphaV").textContent = e.target.value + "%";
+  apply({ opacity: parseInt(e.target.value, 10) });
+});
+$("outline").addEventListener("change", (e) => apply({ outline: e.target.checked }));
+$("olColor").addEventListener("input", (e) => apply({ outline_color: colorToInt(e.target.value, 255) }));
+$("text").addEventListener("input", (e) => apply({ text: e.target.value }));
+
+/* ----------------------------------------------------------- connection */
+$("host").value = store.get("host", "localhost");
+$("port").value = store.get("port", "4455");
+$("pass").value = store.get("pass", "");
+$("gear").addEventListener("click", () => $("conn").classList.toggle("hidden"));
+$("connectBtn").addEventListener("click", () => {
+  if (obs.ready) { obs.close(); setStatus("bad"); return; }
+  store.set("host", $("host").value.trim()); store.set("port", $("port").value); store.set("pass", $("pass").value);
+  obs.connect($("host").value.trim() || "localhost", $("port").value || "4455", $("pass").value)
+    .then(() => { $("conn").classList.add("hidden"); return loadSources(); }).catch(() => {});
+});
+
+applyI18n();
+$("overlayMsg").textContent = t("debug_off");
+$("overlay").classList.add("show"); // until state.js says debug mode is on
+pollState();
+setInterval(pollState, 1500);
+autoConnect();
+</script>
+</body>
+</html>
