@@ -43,6 +43,7 @@ textarea{resize:vertical;min-height:70px;width:100%}
 .btn:hover{background:var(--hover)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .seg{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.row:has(.seg){flex-wrap:wrap}
 .seg button{background:var(--field);border:0;border-right:1px solid var(--line);padding:3px 9px;cursor:pointer;color:var(--muted)}
 .seg button:last-child{border-right:0}
 .seg button:hover{background:var(--hover);color:var(--text)}

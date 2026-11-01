@@ -1248,7 +1248,7 @@ end
 --------------------------------------------------------------------------------
 local function load_prefs()
 	local path = script_dir() .. PREFS_FILE
-	if not file_exists(path) then return end
+	if not file_exists(path) and not file_exists(path .. ".bak") then return end
 	local d = obs.obs_data_create_from_json_file_safe(path, "bak")
 	if d then
 		local l = obs.obs_data_get_string(d, "language")
