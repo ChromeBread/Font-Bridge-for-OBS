@@ -14,7 +14,7 @@ A script that lets OBS Studio (Windows) naturally load the fonts it couldn't dis
 ## Debug dock
 1. In the script settings, click **Debug Mode: OFF** to turn it on (previews are generated in the background).
 2. Copy the **Dock URL**, then **Docks → Custom Browser Docks…** → paste it.
-3. Enable **Tools → WebSocket Server Settings** and enter the port / password in the dock (⚙).
+3. Enable **Tools → WebSocket Server Settings** and enter the same port / password in the script settings.
 
 ## Uninstall
 Remove the script from **Tools → Scripts** (select it, press **−**), close OBS, then run `Safe_Uninstaller.bat`. It shows what each file is, lets you choose what to remove, backs up your settings, explains moving to another PC, and sends everything to the Recycle Bin.

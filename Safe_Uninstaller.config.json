@@ -1,6 +1,8 @@
 {
   "app": "Font Bridge for OBS",
+  "admin": true,
   "main": "obs_font_bridge.lua",
+  "oldMains": [ "fontbridge_text.lua" ],
   "items": [
     { "name": "obs_font_bridge.lua", "kind": "core" },
     { "name": "obs_font_bridge_dock.html", "kind": "core" },
@@ -8,6 +10,10 @@
     { "name": "obs_font_bridge_dock_data", "kind": "generated" },
     { "name": "obs_font_bridge_prefs.json.bak", "kind": "generated" },
     { "name": "obs_font_bridge_prefs.json.tmp", "kind": "generated" },
+    { "name": "fontbridge_text.lua", "kind": "old" },
+    { "name": "fontbridge_dock.html", "kind": "old" },
+    { "name": "fontbridge_dock_data", "kind": "old" },
+    { "name": "fontbridge_text_prefs.json", "kind": "old" },
     { "name": "Safe_Uninstaller.bat", "kind": "core" },
     { "name": "Safe_Uninstaller.config.json", "kind": "core" },
     { "name": "Safe_Uninstaller.ps1", "kind": "core" }
