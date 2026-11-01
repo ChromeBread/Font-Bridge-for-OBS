@@ -1,6 +1,10 @@
+**English** | [日本語](README.ja.md) | [한국어](README.ko.md) | [Bahasa Indonesia](README.id.md) | [Français](README.fr.md) | [繁體中文](README.zh-TW.md)
+
 # Font Bridge for OBS
 
 A script that lets OBS Studio (Windows) naturally load the fonts it couldn't display before.
+
+<img src="docs/images/en/font_dock.png" alt="Font Bridge dock" width="340">
 
 - Fonts newly activated in a font manager are picked up automatically (no OBS restart)
 - UI in English / 日本語 / 한국어 / Bahasa Indonesia / Français / 繁體中文 (other OBS languages → English)

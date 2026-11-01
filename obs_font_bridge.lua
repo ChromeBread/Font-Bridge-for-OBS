@@ -23,7 +23,7 @@ local bit = require("bit")
 --------------------------------------------------------------------------------
 local SCRIPT_NAME = "Font Bridge for OBS"
 local SOURCE_ID   = "fontbridge_text"
-local VERSION     = "1.3.0"
+local VERSION     = "1.4.0"
 local BUILD_DATE  = { year = 2026, month = 11, day = 1 }
 local AUTHOR      = "ChromeBread feat. BlackDream"
 local DOCK_HTML   = "obs_font_bridge_dock.html"
