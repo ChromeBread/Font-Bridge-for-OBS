@@ -6,9 +6,6 @@ OBS で反映できなかったフォントを、自然の力で正しく読み�
 
 <img src="docs/images/ja/font_dock.png" alt="Font Bridge ドック" width="340">
 
-- フォント管理ソフトで有効にしたフォントも自動で読み込みます (OBS の再起動は不要)
-- UI は English / 日本語 / 한국어 / Bahasa Indonesia / Français / 繁體中文 (他の OBS 言語は英語)
-- デバッグモード: フォントのプレビュー付きブラウザドック
 
 ## インストール
 1. `obs_font_bridge.lua` と `obs_font_bridge_dock.html` を同じフォルダに置きます。
