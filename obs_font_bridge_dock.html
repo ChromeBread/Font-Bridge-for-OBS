@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  OBS Font Bridge - font dock (debug mode)
+  Font Bridge for OBS - font dock (debug mode)
   Add in OBS: Docks -> Custom Browser Docks... and paste the "Dock URL" shown in the script settings.
   Talks to OBS through obs-websocket v5 (built into OBS 28+).
 -->
@@ -8,7 +8,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OBS Font Bridge</title>
+<title>Font Bridge for OBS</title>
 <style>
 :root{
   --bg:#1f2129;--panel:#272a34;--field:#1a1c23;--line:#3a3e4b;--text:#e3e5ec;--muted:#9296a6;
@@ -72,7 +72,7 @@ footer .grow{text-align:right}
 <body>
 <div class="bar">
   <span class="dot" id="dot"></span>
-  <h1>OBS Font Bridge</h1>
+  <h1>Font Bridge for OBS</h1>
   <span id="status" style="color:var(--muted);font-size:11px"></span>
   <button class="ibtn" id="gear" title="">⚙</button>
 </div>
@@ -157,7 +157,7 @@ const I18N = {
     underline:"Underline",strikeout:"Strikethrough",align_left:"Left",align_center:"Center",align_right:"Right",
     color:"Color",opacity:"Opacity",outline:"Outline",quality:"Smoothing",q1:"Standard (1x)",q2:"High (2x)",q4:"Ultra (4x)",
     text:"Text",fonts_n:"{n} fonts",previews:"Generating previews… {d}/{n}",
-    debug_off:"Debug Mode is OFF. Turn it on in Tools → Scripts → OBS Font Bridge."},
+    debug_off:"Debug Mode is OFF. Turn it on in Tools → Scripts → Font Bridge for OBS."},
   ja:{host:"ホスト",port:"ポート",password:"パスワード",connect:"接続",disconnect:"切断",
     st_connected:"接続済み",st_disconnected:"未接続",st_connecting:"接続中…",
     auth_failed:"認証に失敗しました。パスワードを確認してください。",
@@ -167,7 +167,7 @@ const I18N = {
     underline:"下線",strikeout:"取り消し線",align_left:"左揃え",align_center:"中央揃え",align_right:"右揃え",
     color:"カラー",opacity:"不透明度",outline:"縁取り",quality:"アンチエイリアス",q1:"標準 (1x)",q2:"高 (2x)",q4:"最高 (4x)",
     text:"テキスト",fonts_n:"{n} 書体",previews:"プレビュー生成中… {d}/{n}",
-    debug_off:"デバッグモードがOFFです。ツール → スクリプト → OBS Font Bridge でONにしてください。"},
+    debug_off:"デバッグモードがOFFです。ツール → スクリプト → Font Bridge for OBS でONにしてください。"},
   ko:{host:"호스트",port:"포트",password:"비밀번호",connect:"연결",disconnect:"연결 끊기",
     st_connected:"연결됨",st_disconnected:"연결 안 됨",st_connecting:"연결 중…",
     auth_failed:"인증에 실패했습니다. 비밀번호를 확인하세요.",
@@ -177,7 +177,7 @@ const I18N = {
     underline:"밑줄",strikeout:"취소선",align_left:"왼쪽",align_center:"가운데",align_right:"오른쪽",
     color:"색상",opacity:"불투명도",outline:"외곽선",quality:"안티앨리어싱",q1:"표준 (1x)",q2:"높음 (2x)",q4:"최고 (4x)",
     text:"텍스트",fonts_n:"글꼴 {n}개",previews:"미리보기 생성 중… {d}/{n}",
-    debug_off:"디버그 모드가 꺼져 있습니다. 도구 → 스크립트 → OBS Font Bridge에서 켜세요."},
+    debug_off:"디버그 모드가 꺼져 있습니다. 도구 → 스크립트 → Font Bridge for OBS에서 켜세요."},
   id:{host:"Host",port:"Port",password:"Kata sandi",connect:"Hubungkan",disconnect:"Putuskan",
     st_connected:"Terhubung",st_disconnected:"Tidak terhubung",st_connecting:"Menghubungkan…",
     auth_failed:"Autentikasi gagal. Periksa kata sandi.",
@@ -187,7 +187,7 @@ const I18N = {
     underline:"Garis bawah",strikeout:"Coret",align_left:"Kiri",align_center:"Tengah",align_right:"Kanan",
     color:"Warna",opacity:"Opasitas",outline:"Garis tepi",quality:"Penghalusan",q1:"Standar (1x)",q2:"Tinggi (2x)",q4:"Ultra (4x)",
     text:"Teks",fonts_n:"{n} font",previews:"Membuat pratinjau… {d}/{n}",
-    debug_off:"Mode Debug MATI. Aktifkan di Alat → Skrip → OBS Font Bridge."},
+    debug_off:"Mode Debug MATI. Aktifkan di Alat → Skrip → Font Bridge for OBS."},
   fr:{host:"Hôte",port:"Port",password:"Mot de passe",connect:"Se connecter",disconnect:"Se déconnecter",
     st_connected:"Connecté",st_disconnected:"Non connecté",st_connecting:"Connexion…",
     auth_failed:"Échec de l'authentification. Vérifiez le mot de passe.",
@@ -197,7 +197,7 @@ const I18N = {
     underline:"Souligné",strikeout:"Barré",align_left:"Gauche",align_center:"Centre",align_right:"Droite",
     color:"Couleur",opacity:"Opacité",outline:"Contour",quality:"Lissage",q1:"Standard (1x)",q2:"Élevée (2x)",q4:"Ultra (4x)",
     text:"Texte",fonts_n:"{n} polices",previews:"Génération des aperçus… {d}/{n}",
-    debug_off:"Le mode débogage est désactivé. Activez-le dans Outils → Scripts → OBS Font Bridge."},
+    debug_off:"Le mode débogage est désactivé. Activez-le dans Outils → Scripts → Font Bridge for OBS."},
   zh_TW:{host:"主機",port:"連接埠",password:"密碼",connect:"連線",disconnect:"中斷連線",
     st_connected:"已連線",st_disconnected:"未連線",st_connecting:"連線中…",
     auth_failed:"驗證失敗，請確認密碼。",
@@ -207,7 +207,7 @@ const I18N = {
     underline:"底線",strikeout:"刪除線",align_left:"靠左",align_center:"置中",align_right:"靠右",
     color:"顏色",opacity:"不透明度",outline:"外框",quality:"反鋸齒",q1:"標準 (1x)",q2:"高 (2x)",q4:"極高 (4x)",
     text:"文字",fonts_n:"{n} 個字型",previews:"正在產生預覽… {d}/{n}",
-    debug_off:"偵錯模式為關閉。請在 工具 → 腳本 → OBS Font Bridge 中開啟。"},
+    debug_off:"偵錯模式為關閉。請在 工具 → 腳本 → Font Bridge for OBS 中開啟。"},
 };
 const DATA_DIR = "obs_font_bridge_dock_data/";
 const SAMPLE = "Abg あア永 가 123";
@@ -367,7 +367,7 @@ window.fbState = (st) => {
   if (st.lang && st.lang !== lang) { lang = I18N[st.lang] ? st.lang : "en"; L = I18N[lang]; applyI18n(); }
   $("overlayMsg").textContent = t("debug_off");
   $("overlay").classList.toggle("show", !st.enabled);
-  $("meta").textContent = `${st.name} v${st.version} · ${st.buildDate} · ${st.author}`;
+  $("meta").textContent = `${st.name} v${st.version} · ${st.buildDate}`;
   if (st.fontsStamp !== fontsStamp) { fontsStamp = st.fontsStamp; loadData("fonts.js"); }
   $("progress").textContent = st.done < st.total ? t("previews", { d: st.done, n: st.total }) : "";
   if (st.done !== lastDone) { lastDone = st.done; retryPreviews(); }
@@ -550,6 +550,9 @@ $("overlayMsg").textContent = t("debug_off");
 $("overlay").classList.add("show"); // until state.js says debug mode is on
 pollState();
 setInterval(pollState, 1500);
+const mainEl = document.querySelector("main");
+mainEl.scrollTop = Number(store.get("scroll", 0));
+mainEl.addEventListener("scroll", () => store.set("scroll", mainEl.scrollTop));
 autoConnect();
 </script>
 </body>

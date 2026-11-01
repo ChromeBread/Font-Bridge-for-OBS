@@ -1,10 +1,7 @@
-# OBS Font Bridge
+# Font Bridge for OBS
 
-An OBS Studio (Windows) Lua script that adds a **Text (Bridge)** source (localized like Text (GDI+)).
-Its settings page is borrowed from OBS's Text (GDI+) at runtime; it renders through Windows GDI, so fonts that OBS's built-in text sources can't read
-(CFF-based OpenType `.otf`, fonts temporarily activated with font managers, etc.) display correctly.
+A script that lets OBS Studio (Windows) naturally load the fonts it couldn't display before.
 
-- Same settings as Text (GDI+), applied in real time
 - Fonts newly activated in a font manager are picked up automatically (no OBS restart)
 - UI in English / 日本語 / 한국어 / Bahasa Indonesia / Français / 繁體中文 (other OBS languages → English)
 - Debug Mode: a browser dock with font previews
@@ -19,8 +16,11 @@ Its settings page is borrowed from OBS's Text (GDI+) at runtime; it renders thro
 2. Copy the **Dock URL**, then **Docks → Custom Browser Docks…** → paste it.
 3. Enable **Tools → WebSocket Server Settings** and enter the port / password in the dock (⚙).
 
+## Uninstall
+Remove the script from **Tools → Scripts** (select it, press **−**), close OBS, then run `Safe_Uninstaller.bat`. It shows what each file is, lets you choose what to remove, backs up your settings, explains moving to another PC, and sends everything to the Recycle Bin.
+
 Requires OBS 28+ (built-in obs-websocket v5) on Windows.
 
-Author: BlackDream feat. ChromeBread ・ License: GPL-2.0
+Author: ChromeBread feat. BlackDream ・ License: GPL-2.0
 
 This is an unofficial third-party script. It is not affiliated with or endorsed by the OBS Project.

@@ -1,6 +1,6 @@
 --[[
 ================================================================================
- OBS Font Bridge  -  OBS Studio Lua script (Windows)
+ Font Bridge for OBS  -  OBS Studio Lua script (Windows)
 
  Adds a "Text (Bridge)" source that renders through Windows GDI instead of
  GDI+, so fonts that OBS's built-in text source cannot read correctly
@@ -10,7 +10,7 @@
  The property page is borrowed at runtime from OBS's own "Text (GDI+)" source,
  so the editing UI always matches the running OBS version.
 
- Author : BlackDream feat. ChromeBread
+ Author : ChromeBread feat. BlackDream
 ================================================================================
 ]]
 
@@ -21,11 +21,11 @@ local bit = require("bit")
 --------------------------------------------------------------------------------
 -- Meta
 --------------------------------------------------------------------------------
-local SCRIPT_NAME = "OBS Font Bridge"
+local SCRIPT_NAME = "Font Bridge for OBS"
 local SOURCE_ID   = "fontbridge_text"
-local VERSION     = "1.2.0"
-local BUILD_DATE  = { year = 2026, month = 10, day = 31 }
-local AUTHOR      = "BlackDream feat. ChromeBread"
+local VERSION     = "1.3.0"
+local BUILD_DATE  = { year = 2026, month = 11, day = 1 }
+local AUTHOR      = "ChromeBread feat. BlackDream"
 local DOCK_HTML   = "obs_font_bridge_dock.html"
 local DOCK_DATA   = "obs_font_bridge_dock_data"
 local PREFS_FILE  = "obs_font_bridge_prefs.json"
@@ -42,8 +42,15 @@ local LANG_NAMES = {
 
 local I18N = {
 	en = {
+		uninstall_info = "<b>Uninstall</b><br>1. Export your settings below if you want to keep them.<br>2. Tools → Scripts: select this script and press −.<br>3. Run Safe_Uninstaller.bat from the folder below. To remove files by hand, delete only these and leave the folder itself:<br><br>%s<br>%s",
+		backup_export_file = "Export settings to", backup_export = "Export settings",
+		backup_import_file = "Import settings from", backup_import = "Import settings",
+		backup_no_file = "Choose a file first.", backup_failed = "The file could not be read or written.",
+		backup_wrong_app = "This file belongs to a different script.",
+		backup_exported = "Settings exported.", backup_imported = "Settings imported. Hotkeys apply after restarting OBS.",
 		source_name    = "Text (Bridge)",
 		desc           = "<p>A text source that renders through Windows GDI, so fonts that OBS's built-in text source can't read &mdash; such as CFF-based OpenType (.otf) fonts or fonts temporarily activated with font managers &mdash; display correctly.</p><p>Add it from <b>Sources &rarr; + &rarr; Text (Bridge)</b>. Its settings are the same as Text (GDI+), and changes apply in real time.</p>",
+		desc_simple    = "<p>A script that lets OBS Studio (Windows) naturally load the fonts it couldn't display before.</p><p>Add it from <b>Sources &rarr; + &rarr; Text (Bridge)</b>.</p>",
 		version        = "Version",
 		build_date     = "Build date",
 		author         = "Author",
@@ -58,8 +65,15 @@ local I18N = {
 		font_missing   = "⚠ The font \"%s\" was not found (it may have been deactivated in your font manager). A fallback font is used.",
 	},
 	ja = {
+		uninstall_info = "<b>アンインストール</b><br>1. 設定を残す場合は、下の項目で書き出します。<br>2. ツール → スクリプト でこのスクリプトを選び、− を押します。<br>3. 下のフォルダにある Safe_Uninstaller.bat を実行します。手動で消す場合は次のファイルだけを削除し、フォルダ自体は消さないでください。<br><br>%s<br>%s",
+		backup_export_file = "設定の書き出し先", backup_export = "設定を書き出す",
+		backup_import_file = "設定の読み込み元", backup_import = "設定を読み込む",
+		backup_no_file = "先にファイルを選んでください。", backup_failed = "ファイルを読み書きできませんでした。",
+		backup_wrong_app = "別のスクリプトのファイルです。",
+		backup_exported = "設定を書き出しました。", backup_imported = "設定を読み込みました。ホットキーはOBSの再起動後に反映されます。",
 		source_name    = "テキスト (Bridge)",
 		desc           = "<p>Windows GDI でテキストを描画するソースです。OBS標準のテキストソースでは正しく読めないフォント（CFF形式の OpenType (.otf) や、フォント管理ソフトで一時的に有効化したフォント）も正しく表示できます。</p><p><b>ソース → ＋ → テキスト (Bridge)</b> から追加してください。設定項目はテキスト (GDI+) と同じで、変更はリアルタイムで反映されます。</p>",
+		desc_simple    = "<p>OBSで反映できなかったフォントを自然の力で正しく読み込めるようにするスクリプトです。</p><p><b>ソース → ＋ → テキスト (Bridge)</b> から追加してください。</p>",
 		version        = "バージョン",
 		build_date     = "ビルド日",
 		author         = "製作者",
@@ -74,8 +88,15 @@ local I18N = {
 		font_missing   = "⚠ フォント「%s」が見つかりません（フォント管理ソフトで無効化された可能性があります）。代替フォントで表示しています。",
 	},
 	ko = {
+		uninstall_info = "<b>제거</b><br>1. 설정을 유지하려면 아래 항목에서 내보내세요.<br>2. 도구 → 스크립트에서 이 스크립트를 선택하고 − 를 누르세요.<br>3. 아래 폴더의 Safe_Uninstaller.bat을 실행하세요. 직접 지울 때는 다음 파일만 삭제하고 폴더 자체는 지우지 마세요.<br><br>%s<br>%s",
+		backup_export_file = "설정 내보내기 위치", backup_export = "설정 내보내기",
+		backup_import_file = "설정 가져오기 파일", backup_import = "설정 가져오기",
+		backup_no_file = "먼저 파일을 선택하세요.", backup_failed = "파일을 읽거나 쓸 수 없습니다.",
+		backup_wrong_app = "다른 스크립트의 파일입니다.",
+		backup_exported = "설정을 내보냈습니다.", backup_imported = "설정을 가져왔습니다. 단축키는 OBS를 다시 시작하면 적용됩니다.",
 		source_name    = "텍스트 (Bridge)",
 		desc           = "<p>Windows GDI로 텍스트를 렌더링하는 소스입니다. OBS 기본 텍스트 소스로는 제대로 읽을 수 없는 글꼴(CFF 기반 OpenType(.otf) 글꼴이나 글꼴 관리 프로그램으로 임시 활성화한 글꼴)도 올바르게 표시합니다.</p><p><b>소스 → + → 텍스트 (Bridge)</b>에서 추가하세요. 설정 항목은 텍스트 (GDI+)와 같으며 변경 사항이 실시간으로 반영됩니다.</p>",
+		desc_simple    = "<p>OBS에서 표시하지 못했던 글꼴을 자연스럽게 올바로 불러올 수 있게 해 주는 스크립트입니다.</p><p><b>소스 → + → 텍스트 (Bridge)</b>에서 추가하세요.</p>",
 		version        = "버전",
 		build_date     = "빌드 날짜",
 		author         = "제작자",
@@ -90,8 +111,15 @@ local I18N = {
 		font_missing   = "⚠ 글꼴 \"%s\"을(를) 찾을 수 없습니다(글꼴 관리 프로그램에서 비활성화되었을 수 있습니다). 대체 글꼴로 표시합니다.",
 	},
 	id = {
+		uninstall_info = "<b>Hapus instalasi</b><br>1. Ekspor pengaturan di bawah jika ingin menyimpannya.<br>2. Alat → Skrip: pilih skrip ini lalu tekan −.<br>3. Jalankan Safe_Uninstaller.bat dari folder di bawah. Untuk menghapus manual, hapus hanya file berikut dan jangan hapus foldernya:<br><br>%s<br>%s",
+		backup_export_file = "Ekspor pengaturan ke", backup_export = "Ekspor pengaturan",
+		backup_import_file = "Impor pengaturan dari", backup_import = "Impor pengaturan",
+		backup_no_file = "Pilih file terlebih dahulu.", backup_failed = "File tidak dapat dibaca atau ditulis.",
+		backup_wrong_app = "File ini milik skrip lain.",
+		backup_exported = "Pengaturan diekspor.", backup_imported = "Pengaturan diimpor. Hotkey berlaku setelah OBS dimulai ulang.",
 		source_name    = "Teks (Bridge)",
 		desc           = "<p>Sumber teks yang dirender melalui Windows GDI, sehingga font yang tidak dapat dibaca oleh sumber teks bawaan OBS &mdash; seperti font OpenType berbasis CFF (.otf) atau font yang diaktifkan sementara dengan pengelola font &mdash; dapat ditampilkan dengan benar.</p><p>Tambahkan dari <b>Sumber &rarr; + &rarr; Teks (Bridge)</b>. Pengaturannya sama dengan Teks (GDI+), dan perubahan diterapkan secara real-time.</p>",
+		desc_simple    = "<p>Skrip yang membuat OBS dapat memuat secara alami font yang sebelumnya tidak bisa ditampilkan.</p><p>Tambahkan dari <b>Sumber &rarr; + &rarr; Teks (Bridge)</b>.</p>",
 		version        = "Versi",
 		build_date     = "Tanggal build",
 		author         = "Pembuat",
@@ -106,8 +134,15 @@ local I18N = {
 		font_missing   = "⚠ Font \"%s\" tidak ditemukan (mungkin telah dinonaktifkan di pengelola font). Font pengganti digunakan.",
 	},
 	fr = {
+		uninstall_info = "<b>Désinstallation</b><br>1. Exportez vos réglages ci-dessous si vous voulez les garder.<br>2. Outils → Scripts : sélectionnez ce script et cliquez sur −.<br>3. Lancez Safe_Uninstaller.bat depuis le dossier ci-dessous. Pour supprimer à la main, effacez uniquement ces fichiers, sans toucher au dossier :<br><br>%s<br>%s",
+		backup_export_file = "Exporter les réglages vers", backup_export = "Exporter les réglages",
+		backup_import_file = "Importer les réglages depuis", backup_import = "Importer les réglages",
+		backup_no_file = "Choisissez d'abord un fichier.", backup_failed = "Impossible de lire ou d'écrire le fichier.",
+		backup_wrong_app = "Ce fichier appartient à un autre script.",
+		backup_exported = "Réglages exportés.", backup_imported = "Réglages importés. Les raccourcis s'appliquent après le redémarrage d'OBS.",
 		source_name    = "Texte (Bridge)",
 		desc           = "<p>Une source de texte rendue via Windows GDI, afin que les polices que la source de texte intégrée d'OBS ne lit pas correctement &mdash; comme les polices OpenType basées sur CFF (.otf) ou les polices activées temporairement avec un gestionnaire de polices &mdash; s'affichent correctement.</p><p>Ajoutez-la via <b>Sources &rarr; + &rarr; Texte (Bridge)</b>. Ses paramètres sont identiques à ceux de Texte (GDI+) et les changements s'appliquent en temps réel.</p>",
+		desc_simple    = "<p>Un script qui permet à OBS de charger naturellement les polices qu'il ne pouvait pas afficher.</p><p>Ajoutez-la via <b>Sources &rarr; + &rarr; Texte (Bridge)</b>.</p>",
 		version        = "Version",
 		build_date     = "Date de build",
 		author         = "Auteur",
@@ -122,8 +157,15 @@ local I18N = {
 		font_missing   = "⚠ La police « %s » est introuvable (elle a peut-être été désactivée dans votre gestionnaire de polices). Une police de remplacement est utilisée.",
 	},
 	zh_TW = {
+		uninstall_info = "<b>解除安裝</b><br>1. 若要保留設定，請先在下方匯出。<br>2. 在 工具 → 腳本 中選取此腳本並按 −。<br>3. 執行下方資料夾中的 Safe_Uninstaller.bat。若要手動刪除，請只刪除下列檔案，不要刪除資料夾本身。<br><br>%s<br>%s",
+		backup_export_file = "設定匯出至", backup_export = "匯出設定",
+		backup_import_file = "設定匯入來源", backup_import = "匯入設定",
+		backup_no_file = "請先選擇檔案。", backup_failed = "無法讀取或寫入檔案。",
+		backup_wrong_app = "此檔案屬於其他腳本。",
+		backup_exported = "已匯出設定。", backup_imported = "已匯入設定。快速鍵會在重新啟動 OBS 後套用。",
 		source_name    = "文字 (Bridge)",
 		desc           = "<p>透過 Windows GDI 繪製文字的來源。即使是 OBS 內建文字來源無法正確讀取的字型（例如 CFF 格式的 OpenType (.otf) 字型，或以字型管理工具暫時啟用的字型），也能正確顯示。</p><p>請從 <b>來源 → ＋ → 文字 (Bridge)</b> 新增。設定項目與 文字 (GDI+) 相同，變更會即時套用。</p>",
+		desc_simple    = "<p>讓 OBS 能自然地正確讀取原本無法顯示的字型的腳本。</p><p>請從 <b>來源 → ＋ → 文字 (Bridge)</b> 新增。</p>",
 		version        = "版本",
 		build_date     = "建置日期",
 		author         = "製作者",
@@ -1189,7 +1231,7 @@ end
 local function load_prefs()
 	local path = script_dir() .. PREFS_FILE
 	if not file_exists(path) then return end
-	local d = obs.obs_data_create_from_json_file(path)
+	local d = obs.obs_data_create_from_json_file_safe(path, "bak")
 	if d then
 		local l = obs.obs_data_get_string(d, "language")
 		if l == "auto" or I18N[l] then lang_setting = l end
@@ -1200,7 +1242,7 @@ end
 local function save_prefs()
 	local d = obs.obs_data_create()
 	obs.obs_data_set_string(d, "language", lang_setting)
-	obs.obs_data_save_json(d, script_dir() .. PREFS_FILE)
+	obs.obs_data_save_json_safe(d, script_dir() .. PREFS_FILE, "tmp", "bak")
 	obs.obs_data_release(d)
 end
 
@@ -1216,16 +1258,45 @@ local SCRIPT_LABELS = {
 }
 local DEBUG_PROPS = { "dock_url", "dock_info", "regen_previews" }
 
+local UNINSTALL_FILES = "obs_font_bridge.lua<br>obs_font_bridge_dock.html<br>obs_font_bridge_prefs.json<br>obs_font_bridge_dock_data"
+local BACKUP_SKIP = { "dock_url", "backup_export_file", "backup_import_file" }
+
+local DEBUG_LABELS = {
+	backup_export_file = "backup_export_file", backup_export = "backup_export",
+	backup_import_file = "backup_import_file", backup_import = "backup_import",
+}
+
+local function apply_debug_props(props)
+	for name, key in pairs(DEBUG_LABELS) do
+		local p = obs.obs_properties_get(props, name)
+		if p then
+			obs.obs_property_set_description(p, T(key))
+			obs.obs_property_set_visible(p, debug_mode)
+		end
+	end
+	local info = obs.obs_properties_get(props, "uninstall_info")
+	if info then
+		-- The folder can reveal a user name, so this stays behind Debug Mode.
+		obs.obs_property_set_description(info, string.format(T("uninstall_info"), script_dir(), UNINSTALL_FILES))
+		obs.obs_property_set_visible(info, debug_mode)
+	end
+	local status = obs.obs_properties_get(props, "backup_status")
+	if status then obs.obs_property_set_visible(status, debug_mode) end
+end
+
 local function apply_script_props(props)
 	for name, key in pairs(SCRIPT_LABELS) do
 		local p = obs.obs_properties_get(props, name)
 		if p then obs.obs_property_set_description(p, T(key)) end
 	end
+	obs.obs_property_set_description(obs.obs_properties_get(props, "desc_info"),
+		debug_mode and T("desc") or T("desc_simple"))
 	obs.obs_property_set_description(obs.obs_properties_get(props, "debug_toggle"),
 		debug_mode and T("debug_on") or T("debug_off"))
 	for _, name in ipairs(DEBUG_PROPS) do
 		obs.obs_property_set_visible(obs.obs_properties_get(props, name), debug_mode)
 	end
+	apply_debug_props(props)
 end
 
 local function on_language_changed(props, _, settings)
@@ -1238,6 +1309,81 @@ local function on_language_changed(props, _, settings)
 	end
 	apply_script_props(props)
 	return true
+end
+
+local function set_backup_status(props, text)
+	obs.obs_property_set_description(obs.obs_properties_get(props, "backup_status"), text)
+	log(obs.LOG_INFO, text)
+end
+
+local function backup_path(key)
+	return script_settings and obs.obs_data_get_string(script_settings, key) or ""
+end
+
+-- One readable JSON file, so a setting can still be copied by hand on another PC.
+local function on_backup_export(props, _)
+	local path = backup_path("backup_export_file")
+	if path == "" then set_backup_status(props, T("backup_no_file")); return true end
+	if script_save then script_save(script_settings) end
+	local data = obs.obs_data_create()
+	local settings = obs.obs_data_create_from_json(obs.obs_data_get_json(script_settings))
+	for _, key in ipairs(BACKUP_SKIP) do obs.obs_data_erase(settings, key) end
+	obs.obs_data_set_string(data, "app", SCRIPT_NAME)
+	obs.obs_data_set_string(data, "version", VERSION)
+	obs.obs_data_set_obj(data, "settings", settings)
+	local prefs = obs.obs_data_create_from_json_file(script_dir() .. PREFS_FILE)
+	if prefs then
+		obs.obs_data_set_obj(data, "prefs", prefs)
+		obs.obs_data_release(prefs)
+	end
+	local save = obs.obs_data_save_json_pretty or obs.obs_data_save_json
+	local ok = save(data, path)
+	obs.obs_data_release(settings)
+	obs.obs_data_release(data)
+	set_backup_status(props, ok and T("backup_exported") or T("backup_failed"))
+	return true
+end
+
+local function on_backup_import(props, _)
+	local path = backup_path("backup_import_file")
+	if path == "" then set_backup_status(props, T("backup_no_file")); return true end
+	local data = obs.obs_data_create_from_json_file(path)
+	if not data then set_backup_status(props, T("backup_failed")); return true end
+	if obs.obs_data_get_string(data, "app") ~= SCRIPT_NAME then
+		obs.obs_data_release(data)
+		set_backup_status(props, T("backup_wrong_app"))
+		return true
+	end
+	local settings = obs.obs_data_get_obj(data, "settings")
+	if settings then
+		for _, key in ipairs(BACKUP_SKIP) do obs.obs_data_erase(settings, key) end
+		obs.obs_data_erase(settings, "debug_mode")
+		obs.obs_data_apply(script_settings, settings)
+		obs.obs_data_release(settings)
+	end
+	local prefs = obs.obs_data_get_obj(data, "prefs")
+	if prefs then
+		obs.obs_data_save_json_safe(prefs, script_dir() .. PREFS_FILE, "tmp", "bak")
+		obs.obs_data_release(prefs)
+		load_prefs()
+		resolve_lang()
+	end
+	obs.obs_data_release(data)
+	obs.obs_data_set_string(script_settings, "language", lang_setting)
+	if script_update then script_update(script_settings) end
+	write_dock_state()
+	apply_script_props(props)
+	set_backup_status(props, T("backup_imported"))
+	return true
+end
+
+local function add_debug_props(props)
+	obs.obs_properties_add_text(props, "uninstall_info", "", obs.OBS_TEXT_INFO)
+	obs.obs_properties_add_path(props, "backup_export_file", "", obs.OBS_PATH_FILE_SAVE, "JSON (*.json)", nil)
+	obs.obs_properties_add_button(props, "backup_export", "", on_backup_export)
+	obs.obs_properties_add_path(props, "backup_import_file", "", obs.OBS_PATH_FILE, "JSON (*.json)", nil)
+	obs.obs_properties_add_button(props, "backup_import", "", on_backup_import)
+	obs.obs_properties_add_text(props, "backup_status", " ", obs.OBS_TEXT_INFO)
 end
 
 local function on_debug_toggle(props, _)
@@ -1254,13 +1400,13 @@ local function on_regen_previews(_, _)
 end
 
 function script_description()
-	return string.format([[<h2>%s</h2>%s<hr/>
+	return string.format([[<h2>%s</h2>
 <table>
 <tr><td><b>%s</b></td><td>&nbsp;&nbsp;%s</td></tr>
 <tr><td><b>%s</b></td><td>&nbsp;&nbsp;%s</td></tr>
 <tr><td><b>%s</b></td><td>&nbsp;&nbsp;%s</td></tr>
 </table>]],
-		SCRIPT_NAME, T("desc"),
+		SCRIPT_NAME,
 		T("version"), VERSION,
 		T("build_date"), format_date(BUILD_DATE, current_lang),
 		T("author"), AUTHOR)
@@ -1268,6 +1414,8 @@ end
 
 function script_properties()
 	local props = obs.obs_properties_create()
+	-- OBS reads script_description() only once at load, so the text that follows Debug Mode lives here
+	obs.obs_properties_add_text(props, "desc_info", T("desc_simple"), obs.OBS_TEXT_INFO)
 
 	local lp = obs.obs_properties_add_list(props, "language", T("language"),
 		obs.OBS_COMBO_TYPE_LIST, obs.OBS_COMBO_FORMAT_STRING)
@@ -1282,6 +1430,7 @@ function script_properties()
 	obs.obs_properties_add_text(props, "dock_info", T("dock_howto"), obs.OBS_TEXT_INFO)
 	obs.obs_properties_add_button(props, "regen_previews", T("regen_previews"), on_regen_previews)
 
+	add_debug_props(props)
 	apply_script_props(props)
 	return props
 end
