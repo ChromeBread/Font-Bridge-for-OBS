@@ -12,7 +12,7 @@ A script that lets OBS Studio (Windows) naturally load the fonts it couldn't dis
 3. **Sources → + → Text (Bridge)**.
 
 ## Debug dock
-1. In the script settings, click **Debug Mode ⬜** to turn it on (previews are generated in the background).
+1. In the script settings, tick **Debug Mode** (previews are generated in the background).
 2. Copy the **Dock URL**, then **Docks → Custom Browser Docks…** → paste it.
 3. Enable **Tools → WebSocket Server Settings** and enter the same port / password in the script settings.
 
