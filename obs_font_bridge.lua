@@ -29,6 +29,7 @@ local AUTHOR      = "ChromeBread feat. BlackDream"
 local DOCK_HTML   = "obs_font_bridge_dock.html"
 local DOCK_DATA   = "obs_font_bridge_dock_data"
 local PREFS_FILE  = "obs_font_bridge_prefs.json"
+local LOG_FILE    = "obs_font_bridge_log.txt"
 local GDIPLUS_IDS = { "text_gdiplus_v3", "text_gdiplus_v2", "text_gdiplus" }
 
 --------------------------------------------------------------------------------
@@ -49,6 +50,8 @@ local I18N = {
 		backup_no_file = "Choose a file first.", backup_failed = "The file could not be read or written.",
 		backup_wrong_app = "This file belongs to a different script.",
 		backup_exported = "Settings exported.", backup_imported = "Settings imported. Hotkeys apply after restarting OBS.",
+		log_to_file = "Write a log file", log_export_file = "Export log to", log_export = "Export log",
+		log_exported = "Log exported.", log_none = "There is no log yet.",
 		source_name    = "Text (Bridge)",
 		desc           = "<p>A text source that renders through Windows GDI, so fonts that OBS's built-in text source can't read &mdash; such as CFF-based OpenType (.otf) fonts or fonts temporarily activated with font managers &mdash; display correctly.</p><p>Add it from <b>Sources &rarr; + &rarr; Text (Bridge)</b>. Its settings are the same as Text (GDI+), and changes apply in real time.</p>",
 		desc_simple    = "<p>A script that lets OBS Studio (Windows) naturally load the fonts it couldn't display before.</p><p>Add it from <b>Sources &rarr; + &rarr; Text (Bridge)</b>.</p>",
@@ -72,6 +75,8 @@ local I18N = {
 		backup_no_file = "先にファイルを選んでください。", backup_failed = "ファイルを読み書きできませんでした。",
 		backup_wrong_app = "別のスクリプトのファイルです。",
 		backup_exported = "設定を書き出しました。", backup_imported = "設定を読み込みました。ホットキーはOBSの再起動後に反映されます。",
+		log_to_file = "ログをファイルに書き出す", log_export_file = "ログの書き出し先", log_export = "ログを書き出す",
+		log_exported = "ログを書き出しました。", log_none = "まだログがありません。",
 		source_name    = "テキスト (Bridge)",
 		desc           = "<p>Windows GDI でテキストを描画するソースです。OBS標準のテキストソースでは正しく読めないフォント（CFF形式の OpenType (.otf) や、フォント管理ソフトで一時的に有効化したフォント）も正しく表示できます。</p><p><b>ソース → ＋ → テキスト (Bridge)</b> から追加してください。設定項目はテキスト (GDI+) と同じで、変更はリアルタイムで反映されます。</p>",
 		desc_simple    = "<p>OBSで反映できなかったフォントを自然の力で正しく読み込めるようにするスクリプトです。</p><p><b>ソース → ＋ → テキスト (Bridge)</b> から追加してください。</p>",
@@ -95,6 +100,8 @@ local I18N = {
 		backup_no_file = "먼저 파일을 선택하세요.", backup_failed = "파일을 읽거나 쓸 수 없습니다.",
 		backup_wrong_app = "다른 스크립트의 파일입니다.",
 		backup_exported = "설정을 내보냈습니다.", backup_imported = "설정을 가져왔습니다. 단축키는 OBS를 다시 시작하면 적용됩니다.",
+		log_to_file = "로그를 파일로 기록", log_export_file = "로그 내보내기 위치", log_export = "로그 내보내기",
+		log_exported = "로그를 내보냈습니다.", log_none = "아직 로그가 없습니다.",
 		source_name    = "텍스트 (Bridge)",
 		desc           = "<p>Windows GDI로 텍스트를 렌더링하는 소스입니다. OBS 기본 텍스트 소스로는 제대로 읽을 수 없는 글꼴(CFF 기반 OpenType(.otf) 글꼴이나 글꼴 관리 프로그램으로 임시 활성화한 글꼴)도 올바르게 표시합니다.</p><p><b>소스 → + → 텍스트 (Bridge)</b>에서 추가하세요. 설정 항목은 텍스트 (GDI+)와 같으며 변경 사항이 실시간으로 반영됩니다.</p>",
 		desc_simple    = "<p>OBS에서 표시하지 못했던 글꼴을 자연스럽게 올바로 불러올 수 있게 해 주는 스크립트입니다.</p><p><b>소스 → + → 텍스트 (Bridge)</b>에서 추가하세요.</p>",
@@ -118,6 +125,8 @@ local I18N = {
 		backup_no_file = "Pilih file terlebih dahulu.", backup_failed = "File tidak dapat dibaca atau ditulis.",
 		backup_wrong_app = "File ini milik skrip lain.",
 		backup_exported = "Pengaturan diekspor.", backup_imported = "Pengaturan diimpor. Hotkey berlaku setelah OBS dimulai ulang.",
+		log_to_file = "Tulis file log", log_export_file = "Ekspor log ke", log_export = "Ekspor log",
+		log_exported = "Log diekspor.", log_none = "Belum ada log.",
 		source_name    = "Teks (Bridge)",
 		desc           = "<p>Sumber teks yang dirender melalui Windows GDI, sehingga font yang tidak dapat dibaca oleh sumber teks bawaan OBS &mdash; seperti font OpenType berbasis CFF (.otf) atau font yang diaktifkan sementara dengan pengelola font &mdash; dapat ditampilkan dengan benar.</p><p>Tambahkan dari <b>Sumber &rarr; + &rarr; Teks (Bridge)</b>. Pengaturannya sama dengan Teks (GDI+), dan perubahan diterapkan secara real-time.</p>",
 		desc_simple    = "<p>Skrip yang membuat OBS dapat memuat secara alami font yang sebelumnya tidak bisa ditampilkan.</p><p>Tambahkan dari <b>Sumber &rarr; + &rarr; Teks (Bridge)</b>.</p>",
@@ -141,6 +150,8 @@ local I18N = {
 		backup_no_file = "Choisissez d'abord un fichier.", backup_failed = "Impossible de lire ou d'écrire le fichier.",
 		backup_wrong_app = "Ce fichier appartient à un autre script.",
 		backup_exported = "Réglages exportés.", backup_imported = "Réglages importés. Les raccourcis s'appliquent après le redémarrage d'OBS.",
+		log_to_file = "Écrire un fichier journal", log_export_file = "Exporter le journal vers", log_export = "Exporter le journal",
+		log_exported = "Journal exporté.", log_none = "Aucun journal pour l'instant.",
 		source_name    = "Texte (Bridge)",
 		desc           = "<p>Une source de texte rendue via Windows GDI, afin que les polices que la source de texte intégrée d'OBS ne lit pas correctement &mdash; comme les polices OpenType basées sur CFF (.otf) ou les polices activées temporairement avec un gestionnaire de polices &mdash; s'affichent correctement.</p><p>Ajoutez-la via <b>Sources &rarr; + &rarr; Texte (Bridge)</b>. Ses paramètres sont identiques à ceux de Texte (GDI+) et les changements s'appliquent en temps réel.</p>",
 		desc_simple    = "<p>Un script qui permet à OBS de charger naturellement les polices qu'il ne pouvait pas afficher.</p><p>Ajoutez-la via <b>Sources &rarr; + &rarr; Texte (Bridge)</b>.</p>",
@@ -164,6 +175,8 @@ local I18N = {
 		backup_no_file = "請先選擇檔案。", backup_failed = "無法讀取或寫入檔案。",
 		backup_wrong_app = "此檔案屬於其他腳本。",
 		backup_exported = "已匯出設定。", backup_imported = "已匯入設定。快速鍵會在重新啟動 OBS 後套用。",
+		log_to_file = "將記錄寫入檔案", log_export_file = "記錄匯出至", log_export = "匯出記錄",
+		log_exported = "已匯出記錄。", log_none = "尚無記錄。",
 		source_name    = "文字 (Bridge)",
 		desc           = "<p>透過 Windows GDI 繪製文字的來源。即使是 OBS 內建文字來源無法正確讀取的字型（例如 CFF 格式的 OpenType (.otf) 字型，或以字型管理工具暫時啟用的字型），也能正確顯示。</p><p>請從 <b>來源 → ＋ → 文字 (Bridge)</b> 新增。設定項目與 文字 (GDI+) 相同，變更會即時套用。</p>",
 		desc_simple    = "<p>讓 OBS 能自然地正確讀取原本無法顯示的字型的腳本。</p><p>請從 <b>來源 → ＋ → 文字 (Bridge)</b> 新增。</p>",
@@ -410,8 +423,36 @@ local function read_text_file(path)
 	return ffi.string(buf, n)
 end
 
+-- Optional log file (Debug Mode), off by default. Kept whole in memory and rewritten,
+-- because io.open cannot open a path with non-ANSI characters (e.g. a Japanese user name).
+local LOG_MAX = 256 * 1024
+local log_path = nil -- set in script_load, once the script folder is known
+local log_to_file = false
+local log_text = nil
+
+-- The Windows user name is part of most paths; it must not reach a log that may be sent to the developer.
+local function mask_user(s)
+	return (tostring(s):gsub("(%a:[/\\][Uu]sers[/\\])[^/\\]+", "%1%%USERNAME%%"))
+end
+
+local function log_file_append(level, msg)
+	if not (log_to_file and log_path) then return end
+	if log_text == nil then
+		local ok, s = pcall(obs.os_quick_read_utf8_file, log_path)
+		log_text = (ok and type(s) == "string") and s or ""
+	end
+	local name = (level == obs.LOG_ERROR and "error") or (level == obs.LOG_WARNING and "warning") or "info"
+	log_text = log_text .. os.date("%Y-%m-%d %H:%M:%S ") .. name .. ": " .. mask_user(msg) .. "\r\n"
+	if #log_text > LOG_MAX then -- drop the older half
+		local cut = log_text:find("\n", #log_text - math.floor(LOG_MAX / 2), true)
+		log_text = cut and log_text:sub(cut + 1) or ""
+	end
+	obs.os_quick_write_utf8_file(log_path, log_text, #log_text, false)
+end
+
 local function log(level, msg)
 	obs.script_log(level, msg)
+	log_file_append(level, msg)
 end
 
 --------------------------------------------------------------------------------
@@ -1270,10 +1311,11 @@ local SCRIPT_LABELS = {
 }
 local DEBUG_PROPS = { "dock_url", "dock_info", "ws_host", "ws_port", "ws_password", "regen_previews" }
 
-local UNINSTALL_FILES = "obs_font_bridge.lua<br>obs_font_bridge_dock.html<br>obs_font_bridge_prefs.json<br>obs_font_bridge_dock_data"
-local BACKUP_SKIP = { "dock_url", "ws_password", "backup_export_file", "backup_import_file" }
+local UNINSTALL_FILES = "obs_font_bridge_log.txt<br>obs_font_bridge.lua<br>obs_font_bridge_dock.html<br>obs_font_bridge_prefs.json<br>obs_font_bridge_dock_data"
+local BACKUP_SKIP = { "dock_url", "ws_password", "backup_export_file", "backup_import_file", "log_export_file" }
 
 local DEBUG_LABELS = {
+	log_to_file = "log_to_file", log_export_file = "log_export_file", log_export = "log_export",
 	backup_export_file = "backup_export_file", backup_export = "backup_export",
 	backup_import_file = "backup_import_file", backup_import = "backup_import",
 }
@@ -1391,12 +1433,33 @@ local function on_backup_import(props, _)
 	return true
 end
 
+local function on_log_export(props, _)
+	local path = backup_path("log_export_file")
+	if path == "" then set_backup_status(props, T("backup_no_file")); return true end
+	if not path:lower():match("%.txt$") then path = path .. ".txt" end
+	local ok, text = pcall(obs.os_quick_read_utf8_file, log_path or "")
+	if not ok or type(text) ~= "string" or text == "" then set_backup_status(props, T("log_none")); return true end
+	local written = obs.os_quick_write_utf8_file(path, text, #text, false)
+	set_backup_status(props, written and T("log_exported") or T("backup_failed"))
+	return true
+end
+
+local function apply_log_setting(settings)
+	local on = obs.obs_data_get_bool(settings, "log_to_file")
+	if on == log_to_file then return end
+	log_to_file = on
+	if on then log(obs.LOG_INFO, SCRIPT_NAME .. " " .. VERSION .. ": log file on") end
+end
+
 local function add_debug_props(props)
 	obs.obs_properties_add_text(props, "uninstall_info", "", obs.OBS_TEXT_INFO)
 	obs.obs_properties_add_path(props, "backup_export_file", "", obs.OBS_PATH_FILE_SAVE, "JSON (*.json)", nil)
 	obs.obs_properties_add_button(props, "backup_export", "", on_backup_export)
 	obs.obs_properties_add_path(props, "backup_import_file", "", obs.OBS_PATH_FILE, "JSON (*.json)", nil)
 	obs.obs_properties_add_button(props, "backup_import", "", on_backup_import)
+	obs.obs_properties_add_bool(props, "log_to_file", "")
+	obs.obs_properties_add_path(props, "log_export_file", "", obs.OBS_PATH_FILE_SAVE, "Text (*.txt)", nil)
+	obs.obs_properties_add_button(props, "log_export", "", on_log_export)
 	obs.obs_properties_add_text(props, "backup_status", " ", obs.OBS_TEXT_INFO)
 end
 
@@ -1457,18 +1520,22 @@ end
 function script_defaults(settings)
 	obs.obs_data_set_default_string(settings, "language", "auto")
 	obs.obs_data_set_default_bool(settings, "debug_mode", false)
+	obs.obs_data_set_default_bool(settings, "log_to_file", false)
 	obs.obs_data_set_default_string(settings, "ws_host", "localhost")
 	obs.obs_data_set_default_int(settings, "ws_port", 4455)
 	obs.obs_data_set_default_string(settings, "ws_password", "")
 end
 
 function script_update(settings)
+	apply_log_setting(settings)
 	set_ws(settings)
 	write_dock_state()
 end
 
 function script_load(settings)
 	script_settings = settings
+	log_path = script_dir() .. LOG_FILE
+	apply_log_setting(settings)
 	obs.obs_data_set_string(settings, "language", lang_setting)
 	obs.obs_data_set_string(settings, "dock_url", file_url(script_dir() .. DOCK_HTML))
 	debug_mode = obs.obs_data_get_bool(settings, "debug_mode")

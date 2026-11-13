@@ -117,6 +117,7 @@ footer:has(#progress:empty){display:none}
     <div class="row">
       <label data-i18n="color">Color</label>
       <input type="color" id="color">
+      <span data-i18n="opacity" style="color:var(--muted);font-size:11px;white-space:nowrap">Opacity</span>
       <input type="range" id="alpha" min="0" max="100" class="grow" data-i18n-title="opacity">
       <span id="alphaV" style="width:34px;text-align:right;color:var(--muted)"></span>
     </div>
@@ -145,7 +146,7 @@ const I18N = {
   en:{host:"Host",port:"Port",password:"Password",connect:"Connect",disconnect:"Disconnect",
     st_connected:"Connected",st_disconnected:"Not connected",st_connecting:"Connecting…",
     auth_failed:"Authentication failed. Check the password.",
-    conn_failed:"Could not connect. Enable the WebSocket server in Tools → WebSocket Server Settings.",
+    conn_failed:"Could not connect. In Tools → Scripts, select this script and turn on Debug Mode to show the port and password fields. Enable the server in Tools → WebSocket Server Settings and enter the same values.",
     connection:"Connection settings",source:"Source",reload:"Reload",no_sources:"No Text (Bridge) sources",font:"Font",
     search:"Search fonts…",refresh_fonts:"Refresh font list",size:"Size",tracking:"Tracking",bold:"Bold",italic:"Italic",
     underline:"Underline",strikeout:"Strikethrough",align_left:"Left",align_center:"Center",align_right:"Right",
@@ -155,7 +156,7 @@ const I18N = {
   ja:{host:"ホスト",port:"ポート",password:"パスワード",connect:"接続",disconnect:"切断",
     st_connected:"接続済み",st_disconnected:"未接続",st_connecting:"接続中…",
     auth_failed:"認証に失敗しました。パスワードを確認してください。",
-    conn_failed:"接続できません。ツール → WebSocketサーバー設定 でサーバーを有効にしてください。",
+    conn_failed:"接続できません。ツール → スクリプト でこのスクリプトを選び、デバッグモードを ON にすると、ポートとパスワードの欄が出ます。ツール → WebSocketサーバー設定 でサーバーを有効にし、同じ値を入れてください。",
     connection:"接続設定",source:"ソース",reload:"再読み込み",no_sources:"テキスト (Bridge) のソースがありません",font:"フォント",
     search:"フォントを検索…",refresh_fonts:"フォント一覧を更新",size:"サイズ",tracking:"トラッキング",bold:"太字",italic:"斜体",
     underline:"下線",strikeout:"取り消し線",align_left:"左揃え",align_center:"中央揃え",align_right:"右揃え",
@@ -165,7 +166,7 @@ const I18N = {
   ko:{host:"호스트",port:"포트",password:"비밀번호",connect:"연결",disconnect:"연결 끊기",
     st_connected:"연결됨",st_disconnected:"연결 안 됨",st_connecting:"연결 중…",
     auth_failed:"인증에 실패했습니다. 비밀번호를 확인하세요.",
-    conn_failed:"연결할 수 없습니다. 도구 → WebSocket 서버 설정에서 서버를 활성화하세요.",
+    conn_failed:"연결할 수 없습니다. 도구 → 스크립트에서 이 스크립트를 선택하고 디버그 모드를 켜면 포트와 비밀번호 칸이 나타납니다. 도구 → WebSocket 서버 설정에서 서버를 켜고 같은 값을 입력하세요.",
     connection:"연결 설정",source:"소스",reload:"다시 불러오기",no_sources:"텍스트 (Bridge) 소스가 없습니다",font:"글꼴",
     search:"글꼴 검색…",refresh_fonts:"글꼴 목록 새로 고침",size:"크기",tracking:"자간",bold:"굵게",italic:"기울임꼴",
     underline:"밑줄",strikeout:"취소선",align_left:"왼쪽",align_center:"가운데",align_right:"오른쪽",
@@ -175,7 +176,7 @@ const I18N = {
   id:{host:"Host",port:"Port",password:"Kata sandi",connect:"Hubungkan",disconnect:"Putuskan",
     st_connected:"Terhubung",st_disconnected:"Tidak terhubung",st_connecting:"Menghubungkan…",
     auth_failed:"Autentikasi gagal. Periksa kata sandi.",
-    conn_failed:"Tidak dapat terhubung. Aktifkan server WebSocket di Alat → Pengaturan Server WebSocket.",
+    conn_failed:"Tidak dapat terhubung. Di Alat → Skrip, pilih skrip ini dan aktifkan Mode Debug untuk menampilkan kolom port dan kata sandi. Aktifkan server di Alat → Pengaturan Server WebSocket dan isi nilai yang sama.",
     connection:"Pengaturan koneksi",source:"Sumber",reload:"Muat ulang",no_sources:"Tidak ada sumber Teks (Bridge)",font:"Font",
     search:"Cari font…",refresh_fonts:"Muat ulang daftar font",size:"Ukuran",tracking:"Spasi huruf",bold:"Tebal",italic:"Miring",
     underline:"Garis bawah",strikeout:"Coret",align_left:"Kiri",align_center:"Tengah",align_right:"Kanan",
@@ -185,7 +186,7 @@ const I18N = {
   fr:{host:"Hôte",port:"Port",password:"Mot de passe",connect:"Se connecter",disconnect:"Se déconnecter",
     st_connected:"Connecté",st_disconnected:"Non connecté",st_connecting:"Connexion…",
     auth_failed:"Échec de l'authentification. Vérifiez le mot de passe.",
-    conn_failed:"Connexion impossible. Activez le serveur WebSocket dans Outils → Paramètres du serveur WebSocket.",
+    conn_failed:"Connexion impossible. Dans Outils → Scripts, sélectionnez ce script et activez le mode débogage pour afficher les champs port et mot de passe. Activez le serveur dans Outils → Paramètres du serveur WebSocket et saisissez les mêmes valeurs.",
     connection:"Paramètres de connexion",source:"Source",reload:"Recharger",no_sources:"Aucune source Texte (Bridge)",font:"Police",
     search:"Rechercher une police…",refresh_fonts:"Actualiser la liste des polices",size:"Taille",tracking:"Approche",bold:"Gras",italic:"Italique",
     underline:"Souligné",strikeout:"Barré",align_left:"Gauche",align_center:"Centre",align_right:"Droite",
@@ -195,7 +196,7 @@ const I18N = {
   zh_TW:{host:"主機",port:"連接埠",password:"密碼",connect:"連線",disconnect:"中斷連線",
     st_connected:"已連線",st_disconnected:"未連線",st_connecting:"連線中…",
     auth_failed:"驗證失敗，請確認密碼。",
-    conn_failed:"無法連線。請在 工具 → WebSocket 伺服器設定 中啟用伺服器。",
+    conn_failed:"無法連線。在 工具 → 腳本 選取此腳本並開啟偵錯模式，就會出現連接埠與密碼欄位。請在 工具 → WebSocket 伺服器設定 啟用伺服器，並輸入相同的值。",
     connection:"連線設定",source:"來源",reload:"重新載入",no_sources:"沒有 文字 (Bridge) 來源",font:"字型",
     search:"搜尋字型…",refresh_fonts:"重新整理字型清單",size:"大小",tracking:"字距",bold:"粗體",italic:"斜體",
     underline:"底線",strikeout:"刪除線",align_left:"靠左",align_center:"置中",align_right:"靠右",
